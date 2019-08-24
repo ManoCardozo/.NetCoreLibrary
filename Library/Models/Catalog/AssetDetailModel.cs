@@ -17,7 +17,7 @@ namespace Library.Models.Catalog
 
         public string ISBN { get; set; }
 
-        public string DeweyCallNumber { get; set; }
+        public string Dewey { get; set; }
 
         public string Status { get; set; }
 
@@ -33,6 +33,12 @@ namespace Library.Models.Catalog
 
         public IEnumerable<CheckoutHistory> CheckoutHistory { get; set; }
 
-        public IEnumerable<AssetDetailModel> CurrentHolds { get; set; }
+        public IEnumerable<AssetHoldModel> CurrentHolds { get; set; }
+    }
+
+    public class AssetHoldModel
+    {
+        public string PatronName { get; set; }
+        public string HoldPlaced { get; set; }
     }
 }

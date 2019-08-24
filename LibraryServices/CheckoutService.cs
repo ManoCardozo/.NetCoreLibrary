@@ -3,6 +3,7 @@ using LibraryData.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -77,7 +78,7 @@ namespace LibraryServices
             _context.SaveChanges();
         }
 
-        public void CheckInItem(int assetId, int libraryCardId)
+        public void CheckInItem(int assetId)
         {
             var now = DateTime.Now;
 
@@ -102,11 +103,13 @@ namespace LibraryServices
             if (currentHolds.Any())
             {
                 CheckoutToEarliestHold(assetId, currentHolds);
+                return;
             }
 
             // otherwise, update the item status to available
             UpdateAssetStatus(assetId, "Available");
 
+            _context.SaveChanges();
         }
 
         private void CheckoutToEarliestHold(int assetId, IQueryable<Hold> currentHolds)
@@ -171,7 +174,7 @@ namespace LibraryServices
             return now.AddDays(30);
         }
 
-        private bool IsCheckedOut(int assetId)
+        public bool IsCheckedOut(int assetId)
         {
             return _context
                     .Checkouts
@@ -185,6 +188,7 @@ namespace LibraryServices
 
             var asset = _context
                 .LibraryAssets
+                .Include(a => a.Status)
                 .FirstOrDefault(a => a.Id == assetId);
 
             var card = _context
@@ -216,7 +220,7 @@ namespace LibraryServices
                 .Include(h => h.LibraryCard)
                 .FirstOrDefault(h => h.Id == holdId);
 
-            var cardId = hold?.LibraryCard.Id;
+            var cardId = hold?.LibraryCard?.Id;
 
             var patron = _context
                 .Patrons
@@ -226,17 +230,20 @@ namespace LibraryServices
             return $"{patron?.FirstName} {patron?.LastName}";
         }
 
-        public DateTime GetCurrentHoldPlaced(int holdId)
+        public string GetCurrentHoldPlaced(int holdId)
         {
-            return _context
-                    .Holds
-                    .Include(h => h.LibraryAsset)
-                    .Include(h => h.LibraryCard)
-                    .FirstOrDefault(h => h.Id == holdId)
-                    .HoldPlaced;
+            var hold = _context
+                .Holds
+                .Include(h => h.LibraryAsset)
+                .Include(h => h.LibraryCard)
+                .Where(h => h.Id == holdId);
+
+            return hold.Select(h => h.HoldPlaced)
+                    .FirstOrDefault()
+                    .ToString(CultureInfo.InvariantCulture);
         }
 
-        private void UpdateAssetStatus(int assetId, string name)
+        private void UpdateAssetStatus(int assetId, string newStatus)
         {
             var item = _context
                 .LibraryAssets
@@ -246,7 +253,7 @@ namespace LibraryServices
 
             item.Status = _context
                 .Statuses
-                .FirstOrDefault(status => status.Name == "Available");
+                .FirstOrDefault(status => status.Name == newStatus);
         }
 
         private void CloseExistingCheckoutHistory(int assetId, DateTime now)

@@ -22,11 +22,13 @@ namespace LibraryData
 
         string GetCurrentHoldPatronName(int id);
 
-        DateTime GetCurrentHoldPlaced(int id);
+        string GetCurrentHoldPlaced(int id);
+
+        bool IsCheckedOut(int assetId);
 
         void CheckOutItem(int assetId, int libraryCardId);
 
-        void CheckInItem(int assetId, int libraryCardId);
+        void CheckInItem(int assetId);
 
         void PlaceHold(int assetId, int libraryCardId);
 
